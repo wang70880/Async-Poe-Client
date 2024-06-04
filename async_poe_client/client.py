@@ -12,6 +12,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import aiohttp
 from aiohttp_socks import ProxyConnector
 from loguru import logger
+from pprint import pprint
 
 from .type import ChatCodeUpdate, ChatTiTleUpdate, SuggestRely, Text, TextCancel
 from .util import (
@@ -106,14 +107,17 @@ class Poe_Client:
 
         """extract data from next_data"""
         try:
-            self.viewer = next_data["props"]["initialData"]["data"]["pageQuery"][
+            # The original schema does not work (Maybe Poe changes the schema), so here update it.
+            self.viewer = next_data["props"]["pageProps"]["data"]["mainQuery"][
                 "viewer"
             ]
             self.user_id = self.viewer["poeUser"]["id"]
             self.subscription = self.viewer["subscription"]
             bot_list = self.viewer["availableBotsConnection"]["edges"]
             for bot in bot_list:
-                self.bots[bot["node"]["handle"]] = {}
+                # The handle here referred to url_bot_name. It is clear that POE also updates the schema.
+                # Use 'displayName' instead
+                self.bots[bot["node"]["displayName"]] = {}
             self.sdid = str(uuid.uuid5(CONST_NAMESPACE, self.viewer["poeUser"]["id"]))
         except KeyError as e:
             raise ValueError(
